@@ -1,6 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
+import { ThemeProvider } from './contexts/ThemeContext';
+
+// Helper to render with ThemeProvider
+const renderApp = () => {
+  return render(
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
+  );
+};
 
 // Mock next/router or similar - for this app we'll handle URL params directly
 const originalLocation = window.location;
@@ -19,7 +29,7 @@ describe('App', () => {
       writable: true,
       value: true,
     });
-    render(<App />);
+    renderApp();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
@@ -27,7 +37,7 @@ describe('App', () => {
     // Set up URL with encoded message "Hello"
     const encoded = Buffer.from('Hello').toString('base64');
     window.location.search = `?m=${encoded}`;
-    render(<App />);
+    renderApp();
     // The flipboard should be displayed with the decoded message
     expect(screen.getByRole('text')).toBeInTheDocument();
   });
@@ -37,7 +47,7 @@ describe('App', () => {
     const malicious = 'Hello<script>alert("xss")</script>';
     const encoded = Buffer.from(malicious).toString('base64');
     window.location.search = `?m=${encoded}`;
-    render(<App />);
+    renderApp();
 
     const flipboard = screen.getByRole('text');
     expect(flipboard.textContent).not.toContain('script');
@@ -47,20 +57,20 @@ describe('App', () => {
 
   it('handles invalid base64 gracefully', () => {
     window.location.search = '?m=!!!invalid!!!';
-    render(<App />);
+    renderApp();
     // Should show encoder when decoding fails
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
   it('handles empty message param', () => {
     window.location.search = '?m=';
-    render(<App />);
+    renderApp();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
   it('ignores unknown query params', () => {
     window.location.search = '?unknown=value';
-    render(<App />);
+    renderApp();
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
@@ -70,7 +80,7 @@ describe('App', () => {
       writable: true,
       value: false,
     });
-    render(<App />);
+    renderApp();
     expect(screen.getByText(/You're offline/)).toBeInTheDocument();
   });
 
@@ -80,27 +90,27 @@ describe('App', () => {
       writable: true,
       value: true,
     });
-    render(<App />);
+    renderApp();
     expect(screen.queryByText(/You're offline/)).not.toBeInTheDocument();
   });
 
   it('shows create your own message button when viewing a message', () => {
     const encoded = Buffer.from('Hello').toString('base64');
     window.location.search = `?m=${encoded}`;
-    render(<App />);
+    renderApp();
     expect(screen.getByRole('button', { name: /Create your own message here/i })).toBeInTheDocument();
   });
 
   it('does not show create button when on home page', () => {
     window.location.search = '';
-    render(<App />);
+    renderApp();
     expect(screen.queryByRole('button', { name: /Create your own message here/i })).not.toBeInTheDocument();
   });
 
   it('create button is clickable when viewing a message', () => {
     const encoded = Buffer.from('Hello').toString('base64');
     window.location.search = `?m=${encoded}`;
-    render(<App />);
+    renderApp();
 
     const createButton = screen.getByRole('button', { name: /Create your own message here/i });
     expect(createButton).toBeEnabled();
