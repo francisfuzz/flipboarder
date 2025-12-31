@@ -276,4 +276,110 @@ describe('MessageEncoder', () => {
       expect(timeElements.length).toBeGreaterThan(0);
     });
   });
+
+  it('shows clear history button when history exists', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const shareButton = screen.getByRole('button', { name: /share/i });
+
+    // Share a message to create history
+    await userEvent.type(textarea, 'Test message');
+    fireEvent.click(shareButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /clear history/i })).toBeInTheDocument();
+    });
+  });
+
+  it('does not show clear history button when history is empty', () => {
+    render(<MessageEncoder />);
+    expect(screen.queryByRole('button', { name: /clear history/i })).not.toBeInTheDocument();
+  });
+
+  it('clears history when clear button is clicked and confirmed', async () => {
+    // Mock window.confirm
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const shareButton = screen.getByRole('button', { name: /share/i });
+
+    // Share a message to create history
+    await userEvent.type(textarea, 'Test message');
+    fireEvent.click(shareButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /clear history/i })).toBeInTheDocument();
+    });
+
+    // Click clear history button
+    const clearButton = screen.getByRole('button', { name: /clear history/i });
+    fireEvent.click(clearButton);
+
+    // Verify confirmation was shown
+    expect(confirmSpy).toHaveBeenCalled();
+
+    // History should be cleared
+    const stored = localStorageMock.getItem('flipboard_history');
+    expect(stored).toBeNull();
+
+    confirmSpy.mockRestore();
+  });
+
+  it('does not clear history when confirmation is cancelled', async () => {
+    // Mock window.confirm to return false
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const shareButton = screen.getByRole('button', { name: /share/i });
+
+    // Share a message to create history
+    await userEvent.type(textarea, 'Test message');
+    fireEvent.click(shareButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /clear history/i })).toBeInTheDocument();
+    });
+
+    // Click clear history button
+    const clearButton = screen.getByRole('button', { name: /clear history/i });
+    fireEvent.click(clearButton);
+
+    // Verify confirmation was shown
+    expect(confirmSpy).toHaveBeenCalled();
+
+    // History should still be there
+    const stored = localStorageMock.getItem('flipboard_history');
+    expect(stored).toBeTruthy();
+
+    confirmSpy.mockRestore();
+  });
+
+  it('removes clear history button after clearing history', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const shareButton = screen.getByRole('button', { name: /share/i });
+
+    // Share a message
+    await userEvent.type(textarea, 'Test message');
+    fireEvent.click(shareButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /clear history/i })).toBeInTheDocument();
+    });
+
+    // Click clear history
+    const clearButton = screen.getByRole('button', { name: /clear history/i });
+    fireEvent.click(clearButton);
+
+    // Button should be gone now
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /clear history/i })).not.toBeInTheDocument();
+    });
+
+    confirmSpy.mockRestore();
+  });
 });
