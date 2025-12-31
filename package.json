@@ -33,6 +33,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "js-base64": "^3.7.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
