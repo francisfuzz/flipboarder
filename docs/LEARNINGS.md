@@ -4,7 +4,7 @@
 
 - Planned with Claude first and wrote to [`docs/plan.md`](plan.md) before getting started on any coding
 - Felt fast (faster?) once swapping models from Haiku to Opus
-- 
+- React+Vite setup had a great foundation for writing tests as we iterated along
 
 ## Learned
 
@@ -16,8 +16,10 @@
 ## Lacked
 
 - Accessible, configurable design system that already integrates with React
-
+- More settings: configuration for timing, style of animation for flipping
+- Needs more emojis 🥺
 
 ## Longed For
 
 - A design system to use components liberally from rather than creating from scratch
+- Another person to pair on and work and ideate with
