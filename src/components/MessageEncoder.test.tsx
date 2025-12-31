@@ -1,7 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import MessageEncoder from './MessageEncoder';
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => {
+      store[key] = value.toString();
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock,
+});
 
 describe('MessageEncoder', () => {
   beforeEach(() => {
@@ -11,6 +32,11 @@ describe('MessageEncoder', () => {
         writeText: vi.fn(() => Promise.resolve()),
       },
     });
+    localStorageMock.clear();
+  });
+
+  afterEach(() => {
+    localStorageMock.clear();
   });
 
   it('renders textarea with 140 char limit', () => {
@@ -77,7 +103,7 @@ describe('MessageEncoder', () => {
     });
   });
 
-  it('shows copied feedback', async () => {
+  it('shows copied feedback when shared', async () => {
     render(<MessageEncoder />);
     const textarea = screen.getByRole('textbox');
     const button = screen.getByRole('button', { name: /share/i });
@@ -86,7 +112,7 @@ describe('MessageEncoder', () => {
     fireEvent.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText('Copied!')).toBeInTheDocument();
+      expect(screen.getByText('✓ Copied to clipboard!')).toBeInTheDocument();
     });
   });
 
@@ -139,5 +165,115 @@ describe('MessageEncoder', () => {
     await userEvent.type(textarea, 'llo');
     const updatedChars = container.querySelectorAll('[data-testid="flip-char"]');
     expect(updatedChars).toHaveLength(5);
+  });
+
+  it('saves message to history when shared', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const button = screen.getByRole('button', { name: /share/i });
+
+    await userEvent.type(textarea, 'Test message');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test message')).toBeInTheDocument();
+    });
+
+    const stored = localStorageMock.getItem('flipboard_history');
+    expect(stored).toBeTruthy();
+    const history = JSON.parse(stored!);
+    expect(history).toHaveLength(1);
+    expect(history[0].message).toBe('Test message');
+  });
+
+  it('displays recent messages section after sharing', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const button = screen.getByRole('button', { name: /share/i });
+
+    await userEvent.type(textarea, 'First message');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText('Recent messages')).toBeInTheDocument();
+      expect(screen.getByText('First message')).toBeInTheDocument();
+    });
+  });
+
+  it('keeps last 10 messages in history', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    const button = screen.getByRole('button', { name: /share/i });
+
+    // Add 12 messages
+    for (let i = 1; i <= 12; i++) {
+      await userEvent.type(textarea, `Message ${i}`);
+      fireEvent.click(button);
+      await waitFor(() => {
+        expect(navigator.clipboard.writeText).toHaveBeenCalled();
+      });
+    }
+
+    const stored = localStorageMock.getItem('flipboard_history');
+    const history = JSON.parse(stored!);
+    expect(history).toHaveLength(10);
+    // Most recent should be first
+    expect(history[0].message).toBe('Message 12');
+    expect(history[9].message).toBe('Message 3');
+  });
+
+  it('shows copy button for each history item', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const button = screen.getByRole('button', { name: /share/i });
+
+    // Share first message
+    await userEvent.type(textarea, 'Original message');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText('Original message')).toBeInTheDocument();
+    });
+
+    // Should have copy button(s)
+    const copyButtons = screen.getAllByRole('button', { name: /copy/i });
+    expect(copyButtons.length).toBeGreaterThan(0);
+  });
+
+  it('allows copying from history via copy button', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const button = screen.getByRole('button', { name: /share/i });
+
+    // Share first message
+    await userEvent.type(textarea, 'Original message');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(screen.getByText('Original message')).toBeInTheDocument();
+    });
+
+    // Click copy button for the history item
+    const copyButtons = screen.getAllByRole('button', { name: /copy/i });
+    fireEvent.click(copyButtons[0]);
+
+    await waitFor(() => {
+      expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(2); // Initial share + copy from history
+    });
+  });
+
+  it('displays timestamp for history items', async () => {
+    render(<MessageEncoder />);
+    const textarea = screen.getByRole('textbox');
+    const button = screen.getByRole('button', { name: /share/i });
+
+    await userEvent.type(textarea, 'Message with time');
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      // Should have time format (HH:MM:SS or similar)
+      const timeElements = screen.getAllByText(/\d{1,2}:\d{1,2}:\d{1,2}/);
+      expect(timeElements.length).toBeGreaterThan(0);
+    });
   });
 });

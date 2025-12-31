@@ -1,7 +1,30 @@
 {
-  "name": "flipboard",
+  "name": "flipboarder",
   "version": "0.1.0",
   "type": "module",
+  "private": true,
+  "description": "Share animated flip-reveal messages with style",
+  "license": "GPL-3.0-only",
+  "author": "francisfuzz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/francisfuzz/flipboard"
+  },
+  "homepage": "https://github.com/francisfuzz/flipboard#readme",
+  "keywords": [
+    "flipboard",
+    "messages",
+    "animation",
+    "flip",
+    "reveal",
+    "share",
+    "pwa",
+    "offline"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",

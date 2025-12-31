@@ -11,6 +11,10 @@ Object.defineProperty(window, 'location', {
 describe('App', () => {
   it('shows encoder when no message param', () => {
     window.location.search = '';
+    Object.defineProperty(window.navigator, 'onLine', {
+      writable: true,
+      value: true,
+    });
     render(<App />);
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
@@ -54,5 +58,25 @@ describe('App', () => {
     window.location.search = '?unknown=value';
     render(<App />);
     expect(screen.getByRole('textbox')).toBeInTheDocument();
+  });
+
+  it('shows offline indicator when offline', () => {
+    window.location.search = '';
+    Object.defineProperty(window.navigator, 'onLine', {
+      writable: true,
+      value: false,
+    });
+    render(<App />);
+    expect(screen.getByText(/You're offline/)).toBeInTheDocument();
+  });
+
+  it('does not show offline indicator when online', () => {
+    window.location.search = '';
+    Object.defineProperty(window.navigator, 'onLine', {
+      writable: true,
+      value: true,
+    });
+    render(<App />);
+    expect(screen.queryByText(/You're offline/)).not.toBeInTheDocument();
   });
 });
