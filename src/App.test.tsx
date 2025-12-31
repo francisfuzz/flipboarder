@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import App from './App';
 
 // Mock next/router or similar - for this app we'll handle URL params directly
-Object.defineProperty(window, 'location', {
-  value: new URL('http://localhost'),
-  writable: true,
-});
+const originalLocation = window.location;
+delete (window as any).location;
+window.location = {
+  ...originalLocation,
+  href: 'http://localhost',
+  search: '',
+  reload: () => {},
+} as any;
 
 describe('App', () => {
   it('shows encoder when no message param', () => {
@@ -78,5 +82,31 @@ describe('App', () => {
     });
     render(<App />);
     expect(screen.queryByText(/You're offline/)).not.toBeInTheDocument();
+  });
+
+  it('shows create your own message button when viewing a message', () => {
+    const encoded = Buffer.from('Hello').toString('base64');
+    window.location.search = `?m=${encoded}`;
+    render(<App />);
+    expect(screen.getByRole('button', { name: /Create your own message here/i })).toBeInTheDocument();
+  });
+
+  it('does not show create button when on home page', () => {
+    window.location.search = '';
+    render(<App />);
+    expect(screen.queryByRole('button', { name: /Create your own message here/i })).not.toBeInTheDocument();
+  });
+
+  it('create button is clickable when viewing a message', () => {
+    const encoded = Buffer.from('Hello').toString('base64');
+    window.location.search = `?m=${encoded}`;
+    render(<App />);
+
+    const createButton = screen.getByRole('button', { name: /Create your own message here/i });
+    expect(createButton).toBeEnabled();
+
+    // Verify button click is possible
+    fireEvent.click(createButton);
+    expect(createButton).toBeInTheDocument();
   });
 });

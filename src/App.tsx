@@ -32,6 +32,10 @@ export default function App() {
     return decoded ? sanitize(decoded) : null;
   }, []);
 
+  const handleCreateOwn = () => {
+    window.location.href = '/';
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col items-center justify-center p-4">
       {!isOnline && (
@@ -39,8 +43,22 @@ export default function App() {
           📴 You're offline - but you can still use the app!
         </div>
       )}
-      <div className="w-full max-w-2xl">
-        {message ? <FlipBoard message={message} /> : <MessageEncoder />}
+      <div className="w-full max-w-2xl flex flex-col gap-6">
+        {message ? (
+          <>
+            <div>
+              <FlipBoard message={message} />
+            </div>
+            <button
+              onClick={handleCreateOwn}
+              className="self-center px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded font-medium hover:opacity-90 transition-opacity"
+            >
+              ✨ Create your own message here
+            </button>
+          </>
+        ) : (
+          <MessageEncoder />
+        )}
       </div>
     </div>
   );

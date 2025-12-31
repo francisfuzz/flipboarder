@@ -3,7 +3,7 @@
  * - Truncates to 140 characters
  * - Removes script tags and HTML
  * - Removes HTML entities
- * - Allows only alphanumeric, spaces, and basic punctuation: , . ! ? - ( ) [ ]
+ * - Allows alphanumeric, spaces, and punctuation: , . ! ? - ( ) [ ] ' " : & / * + # ;
  * - Removes newlines and tabs
  */
 export function sanitize(input: unknown): string {
@@ -31,8 +31,9 @@ export function sanitize(input: unknown): string {
   // Remove newlines and tabs
   cleaned = cleaned.replace(/[\n\t\r]/g, ' ');
 
-  // Keep only: alphanumeric, spaces, and basic punctuation: , . ! ? - ( ) [ ]
-  cleaned = cleaned.replace(/[^a-zA-Z0-9\s,.\!?\-\(\)\[\]]/g, '');
+  // Keep only: alphanumeric, spaces, and allowed punctuation: , . ! ? - ( ) [ ] ' " : & / * + # ;
+  // Also allow curly quotes in case of smart punctuation: ' ' " "
+  cleaned = cleaned.replace(/[^a-zA-Z0-9\s,.\!?\-\(\)\[\]'""'":&/*+#;]/g, '');
 
   // Truncate to 140 characters
   return cleaned.slice(0, 140);
