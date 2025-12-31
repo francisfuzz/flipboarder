@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { encode } from '../utils/encoding';
+import { clearHistory } from '../utils/history';
 import FlipBoard from './FlipBoard';
 
 const MAX_LENGTH = 140;
@@ -69,6 +70,13 @@ export default function MessageEncoder() {
     }
   };
 
+  const handleClearHistory = () => {
+    if (window.confirm('Are you sure you want to clear all message history? This cannot be undone.')) {
+      clearHistory();
+      setHistory([]);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2 pb-6 border-b border-gray-200 dark:border-gray-800">
@@ -130,9 +138,17 @@ export default function MessageEncoder() {
 
       {history.length > 0 && (
         <div className="flex flex-col gap-2 pt-6 border-t border-gray-200 dark:border-gray-800">
-          <label className="text-sm text-gray-600 dark:text-gray-400">
-            Recent messages
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm text-gray-600 dark:text-gray-400">
+              Recent messages
+            </label>
+            <button
+              onClick={handleClearHistory}
+              className="text-xs font-medium px-2 py-1 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+            >
+              Clear history
+            </button>
+          </div>
           <div className="flex flex-col gap-2">
             {history.map((item) => (
               <div
