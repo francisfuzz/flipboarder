@@ -2,6 +2,8 @@
 
 Share animated flip-reveal messages with style. See [Plan](./docs/plan.md) for technical blueprint.
 
+![hello-flipboarder](https://github.com/user-attachments/assets/9a2ffefc-59a2-4cfe-b402-62a8e6c419c9)
+
 ## How to Use
 
 ### Creating and Sharing Messages
